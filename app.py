@@ -6,21 +6,25 @@ import json
 st.set_page_config(page_title="TenderAI — Анализатор", layout="wide")
 st.title("📊 Постобработка и анализ госзакупок")
 
-# Боковая панель для бесплатного ключа нейросети
-st.sidebar.header("Настройки AI")
-api_key = st.sidebar.text_input("Введите ваш Gemini API Key:", type="password")
-st.sidebar.markdown("[Получить ключ бесплатно в Google AI Studio](https://aistudio.google.com/)")
+# Автоматически берем ключ из защищенных секретов сервера
+if "GEMINI_API_KEY" in st.secrets:
+    api_key = st.secrets["GEMINI_API_KEY"]
+    st.sidebar.success("🔒 API Ключ подключен автоматически")
+else:
+    # Если в секретах пусто, оставляем резервное поле ввода
+    st.sidebar.header("Настройки AI")
+    api_key = st.sidebar.text_input("Введите ваш Gemini API Key:", type="password")
+    st.sidebar.markdown("[Получить ключ бесплатно в Google AI Studio](https://aistudio.google.com/)")
 
 uploaded_file = st.file_uploader("Загрузите итоговый протокол тендера (PDF)", type=["pdf"])
 
 if uploaded_file:
     if not api_key:
-        st.warning("👈 Пожалуйста, введите ваш Gemini API Key на панели слева.")
+        st.warning("👈 Пожалуйста, добавьте ваш Gemini API Key в настройки Secrets.")
     else:
         genai.configure(api_key=api_key)
         
         with st.spinner("Читаем документ..."):
-            # Извлекаем текст из PDF
             reader = pypdf.PdfReader(uploaded_file)
             text = ""
             for page in reader.pages:
@@ -30,7 +34,6 @@ if uploaded_file:
             with st.spinner("Нейросеть анализирует текст и извлекает данные..."):
                 model = genai.GenerativeModel('gemini-1.5-flash')
                 
-                # Четкая инструкция для ИИ, чтобы он вернул структурированный JSON
                 prompt = f"""
                 Ты эксперт по государственным закупкам. Проанализируй текст протокола итогов и извлеки данные строго в формате JSON.
                 Если какого-то поля нет, напиши null. Не придумывай данные, которых нет в тексте.
@@ -45,7 +48,7 @@ if uploaded_file:
                   "initial_price": "стартовая (выделенная) сумма числом",
                   "final_price": "финальная цена победителя числом",
                   "rejected_companies": [
-                     {{"name": "название отклоненного участника", "reason": "краткая понятная причина отклонения на русском языке"}}
+                     {{ "name": "название отклоненного участника", "reason": "краткая понятная причина отклонения на русском языке" }}
                   ]
                 }}
 
@@ -57,7 +60,6 @@ if uploaded_file:
                     response = model.generate_content(prompt)
                     res_text = response.text.strip()
                     
-                    # Очищаем ответ от возможных markdown-тегов ```json
                     if "```json" in res_text:
                         res_text = res_text.split("```json")[1].split("```")[0].strip()
                     elif "```" in res_text:
@@ -67,7 +69,6 @@ if uploaded_file:
                     
                     st.success("Анализ успешно завершен!")
                     
-                    # Вывод главных метрик
                     col1, col2, col3 = st.columns(3)
                     col1.metric("Номер лота", data.get("lot_number", "—"))
                     col2.metric("Выделенная сумма", f"{data.get('initial_price', 0)} ₸")
