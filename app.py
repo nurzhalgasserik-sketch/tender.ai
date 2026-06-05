@@ -9,7 +9,7 @@ st.title("📊 Постобработка и анализ госзакупок")
 # Автоматически берем ключ из защищенных секретов сервера
 if "GEMINI_API_KEY" in st.secrets:
     api_key = st.secrets["GEMINI_API_KEY"]
-    st.sidebar.success("🔒 API Ключ подключен автоматически")
+  GEMINI_API_KEY = "ваш_НОВЫЙ_длинный_ключ"
 else:
     # Если в секретах пусто, оставляем резервное поле ввода
     st.sidebar.header("Настройки AI")
