@@ -32,7 +32,7 @@ if uploaded_file:
         
         if st.button("🚀 Запустить AI-анализ"):
             with st.spinner("Нейросеть анализирует текст и извлекает данные..."):
-                model = genai.GenerativeModel('gemini-1.5-flash')
+                model = genai.GenerativeModel('gemini-2.0-flash')
                 
                 prompt = f"""
                 Ты эксперт по государственным закупкам. Проанализируй текст протокола итогов и извлеки данные строго в формате JSON.
